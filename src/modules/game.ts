@@ -133,7 +133,7 @@ export const markMine = (
 
   const rowData = state[y]
 
-  if (rowData[x] > CellState.FLAG) return [state, 0]
+  if (rowData[x] < CellState.FLAG) return [state, 0]
 
   const newState = [...state]
   const newRow = [...rowData]
