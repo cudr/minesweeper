@@ -180,34 +180,64 @@ export const openCell = (
   point: Point,
   minesMap: MinesMap
 ): CellStorage => {
-  const [y, x] = point
+  let newCells = [...state]
 
-  if (
-    y < 0 ||
-    y >= state.length ||
-    x < 0 ||
-    x >= state[0].length ||
-    state[y][x] >= CellState.EMPTY ||
-    minesMap[toKey(...point)]
-  )
-    return state
-
-  const count = countMinesAtPoint(state, point, minesMap)
-
-  if (count >= CellState.MINE) return state
-
-  const newCells = updateCell(state, point, count)
-
-  if (count !== CellState.EMPTY) return newCells
+  const pointMap = {
+    [toKey(...point)]: true
+  }
 
   const points: Point[] = [
-    [y - 1, x],
-    [y + 1, x],
-    [y, x - 1],
-    [y, x + 1]
+    point
   ]
 
-  return points.reduce((acc, el) => openCell(acc, el, minesMap), newCells)
+  let i = 0
+
+  while (i < points.length) {
+    const iterPoint = points[i]
+    const [y, x] = iterPoint
+
+    i++
+
+    if (
+      y < 0 ||
+      y >= state.length ||
+      x < 0 ||
+      x >= state[0].length ||
+      state[y][x] >= CellState.EMPTY ||
+      minesMap[toKey(...point)]
+    ) {
+      continue;
+    }
+  
+    const count = countMinesAtPoint(newCells, iterPoint, minesMap)
+
+    if (count >= CellState.MINE) {
+      continue;
+    }
+  
+    newCells = updateCell(newCells, iterPoint, count)
+  
+    if (count !== CellState.EMPTY) {
+      continue;
+    } else {
+      const matrix: Point[] = [
+        [y - 1, x],
+        [y + 1, x],
+        [y, x - 1],
+        [y, x + 1]
+      ]
+
+      matrix.forEach(p => {
+        const k = toKey(...p)
+        if (!pointMap[k]) {
+          points.push(p)
+          pointMap[k] = true
+        }
+      })
+    }
+  }
+
+  return newCells
 }
 
 const finishGame = (state: CellStorage, point: Point, minesMap: MinesMap) => {
