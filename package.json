@@ -33,7 +33,7 @@
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
   },
-  "homepage": "https://cudr.github.io/minseweeper",
+  "homepage": "https://cudr.github.io/minesweeper/",
   "eslintConfig": {
     "extends": [
       "react-app",
