@@ -284,7 +284,7 @@ export const reducer = (state: Game, action: GameAction<any>) => {
 
       const keys = state.minesMap && Object.keys(state.minesMap)
 
-      let isWin
+      let isWinner
 
       if (
         keys?.length &&
@@ -294,12 +294,12 @@ export const reducer = (state: Game, action: GameAction<any>) => {
           return newCells[y][x] === CellState.FLAG
         })
       ) {
-        isWin = true
+        isWinner = true
       }
 
       return {
         ...state,
-        state: isWin ? GameState.WIN : state.state,
+        state: isWinner ? GameState.WIN : state.state,
         marked: state.marked + increment,
         cells: newCells
       }
