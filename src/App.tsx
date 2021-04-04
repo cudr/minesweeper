@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, memo } from 'react'
 
+import { FixedSizeGrid as Grid, GridChildComponentProps } from 'react-window'
+import AutoSizer from "react-virtualized-auto-sizer"
+
 import {
+  toKey,
   useGameReducer,
   Game,
   GameState,
   GameActionType,
-  CellStorage,
   CellState
 } from './modules/game'
 
@@ -56,19 +59,12 @@ const App = () => {
 
       const row: any[] = Array.from({ length: columns })
 
-      const cells: CellStorage = []
-
-      for (let i = 0; i < rows; i++) {
-        cells[i] = row
-      }
-
       dispatch({
         type: GameActionType.START,
         payload: {
           rows,
           columns,
-          mines,
-          cells
+          mines
         }
       })
     },
@@ -91,13 +87,13 @@ const App = () => {
     return (
       <form onSubmit={onSubmit}>
         <label htmlFor="rows">Rows:</label>
-        <input required max="1000" type="number" name="rows" id="rows" />
+        <input required type="number" name="rows" id="rows" />
         <br />
         <label htmlFor="columns">Columns:</label>
-        <input required max="1000" type="number" name="columns" id="columns" />
+        <input required type="number" name="columns" id="columns" />
         <br />
         <label htmlFor="mines">Mines:</label>
-        <input required max="1000" type="number" name="mines" id="mines" />
+        <input required type="number" name="mines" id="mines" />
         <br />
         <button type="submit">Start Game!</button>
       </form>
@@ -107,9 +103,9 @@ const App = () => {
   return (
     <>
       <button onClick={onRestartGame}>Restart Game!</button>
-      <table onClick={onClick} onContextMenu={onContextMenu}>
+      <div onClick={onClick} onContextMenu={onContextMenu}>
         <Field rows={rows} columns={columns} cells={cells} />
-      </table>
+      </div>
     </>
   )
 }
@@ -121,44 +117,27 @@ const Field: React.FC<Pick<Game, 'rows' | 'columns' | 'cells'>> = ({
   columns,
   cells
 }) => {
-  let rowList = []
-
-  for (let i = 0; i < rows; i++) {
-    rowList.push(
-      <MemoRow
-        columns={columns}
-        key={`row-${i}`}
-        rowIndex={i}
-        rowData={cells[i]}
-      />
-    )
-  }
-
-  return <tbody>{rowList}</tbody>
+  return (
+    <AutoSizer style={{
+      minWidth: '100vw',
+      minHeight: '96vh'
+    }}>
+    {({ height, width }) => (
+      <Grid
+      columnCount={columns}
+      columnWidth={20}
+      height={height}
+      rowCount={rows}
+      rowHeight={20}
+      width={width}
+      itemData={cells}
+    >
+      {Cell}
+    </Grid>
+    )}
+</AutoSizer>  
+  )
 }
-
-const Row: React.FC<{ columns: number; rowIndex: number; rowData: any[] }> = ({
-  columns,
-  rowIndex,
-  rowData
-}) => {
-  let cellList = []
-
-  for (let i = 0; i < columns; i++) {
-    cellList.push(
-      <MemoCell
-        state={rowData[i]}
-        rowIndex={rowIndex}
-        key={`cell-${rowIndex}-${i}`}
-        idx={i}
-      />
-    )
-  }
-
-  return <tr>{cellList}</tr>
-}
-
-const MemoRow = memo(Row)
 
 function getState(state: number) {
   if (state === CellState.EMPTY) return null
@@ -181,16 +160,15 @@ const cellColor = [
   'turquoise'
 ]
 
-const Cell: React.FC<{ state: number; idx: number; rowIndex: number }> = ({
-  state,
-  idx,
-  rowIndex
-}) => {
+const Cell: React.FC<GridChildComponentProps> = ({ data, columnIndex, rowIndex, style }) => {
+  const state = data[toKey(rowIndex, columnIndex)]
+
   const cellState = getState(state)
 
   return (
-    <td
+    <div
       style={{
+        ...style,
         color: cellColor[state],
         backgroundColor:
           state >= CellState.EMPTY && state < CellState.FLAG
@@ -198,11 +176,9 @@ const Cell: React.FC<{ state: number; idx: number; rowIndex: number }> = ({
             : 'lightgray'
       }}
       data-row={rowIndex}
-      data-cell={idx}
+      data-cell={columnIndex}
     >
       {cellState}
-    </td>
+    </div>
   )
 }
-
-const MemoCell = memo(Cell)

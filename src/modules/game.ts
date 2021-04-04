@@ -34,7 +34,9 @@ export enum CellState {
 }
 
 export type Point = [number, number]
-export type CellStorage = number[][]
+export type CellStorage = {
+  [ket: string]: number
+}
 export type MinesMap = {
   [key: string]: boolean
 }
@@ -64,7 +66,7 @@ const initialState: Game = {
   rows: 0,
   columns: 0,
   mines: 0,
-  cells: [],
+  cells: {},
   minesMap: null
 }
 
@@ -113,56 +115,47 @@ export const generateMinesMap = (
 
 export const updateCell = (
   state: CellStorage,
-  [y, x]: Point,
+  point: Point,
   value: CellState
 ) => {
-  const newState = [...state]
-  const rowData = state[y]
-  const newRow = [...rowData]
-  newRow[x] = value
-  newState[y] = newRow
-
-  return newState
+  return { ...state, [toKey(...point)]: value }
 }
 
 export const markMine = (
   state: CellStorage,
   point: Point
 ): [CellStorage, number] => {
-  const [y, x] = point
+  const key = toKey(...point)
 
-  const rowData = state[y]
+  if (state[key] < CellState.FLAG) return [state, 0]
 
-  if (rowData[x] < CellState.FLAG) return [state, 0]
+  const newState = { ...state }
 
-  const newState = [...state]
-  const newRow = [...rowData]
   let increment
 
-  if (newRow[x] === CellState.FLAG) {
+  if (newState[key] === CellState.FLAG) {
     increment = -1
-    delete newRow[x]
+    delete newState[key]
   } else {
-    newRow[x] = CellState.FLAG
+    newState[key] = CellState.FLAG
     increment = 1
   }
-
-  newState[y] = newRow
 
   return [newState, increment]
 }
 
 export const countMinesAtPoint = (
-  state: CellStorage,
+  rows: number,
+  cols: number,
   [y, x]: Point,
   minesMap: MinesMap
 ) => {
   let counter = 0
 
-  for (let i = Math.max(0, y - 1); i <= Math.min(state.length, y + 1); i++) {
+  for (let i = Math.max(0, y - 1); i <= Math.min(rows, y + 1); i++) {
     for (
       let n = Math.max(0, x - 1);
-      n <= Math.min(state[y].length, x + 1);
+      n <= Math.min(cols, x + 1);
       n++
     ) {
       const key = toKey(i, n)
@@ -178,9 +171,11 @@ export const countMinesAtPoint = (
 export const openCell = (
   state: CellStorage,
   point: Point,
-  minesMap: MinesMap
+  minesMap: MinesMap,
+  rows: number,
+  cols: number
 ): CellStorage => {
-  let newCells = [...state]
+  let newState = { ...state }
 
   const pointMap = {
     [toKey(...point)]: true
@@ -198,24 +193,26 @@ export const openCell = (
 
     i++
 
+    const keyPoint = toKey(...iterPoint)
+
     if (
       y < 0 ||
-      y >= state.length ||
+      y >= rows ||
       x < 0 ||
-      x >= state[0].length ||
-      state[y][x] >= CellState.EMPTY ||
-      minesMap[toKey(...point)]
+      x >= cols ||
+      newState[keyPoint] >= CellState.EMPTY ||
+      minesMap[keyPoint]
     ) {
       continue;
     }
   
-    const count = countMinesAtPoint(newCells, iterPoint, minesMap)
+    const count = countMinesAtPoint(rows, cols, iterPoint, minesMap)
 
     if (count >= CellState.MINE) {
       continue;
     }
   
-    newCells = updateCell(newCells, iterPoint, count)
+    newState[keyPoint] = count
   
     if (count !== CellState.EMPTY) {
       continue;
@@ -237,7 +234,7 @@ export const openCell = (
     }
   }
 
-  return newCells
+  return newState
 }
 
 const finishGame = (state: CellStorage, point: Point, minesMap: MinesMap) => {
@@ -286,14 +283,18 @@ export const reducer = (state: Game, action: GameAction<any>) => {
         )
       }
 
-      let cells = state.cells,
-        isExlosed = minesMap[toKey(row, cell)]
+      const cellKey = toKey(row, cell)
 
-      if (cells?.[row]?.[cell] !== CellState.FLAG) {
+      let cells = state.cells,
+        isExlosed = minesMap[cellKey]
+
+      if (cells[cellKey] !== CellState.FLAG) {
         cells = (isExlosed ? finishGame : openCell)(
           state.cells,
           point,
-          minesMap
+          minesMap,
+          state.rows,
+          state.columns,
         )
       }
 
@@ -318,11 +319,7 @@ export const reducer = (state: Game, action: GameAction<any>) => {
 
       if (
         keys?.length &&
-        keys?.every(mineKey => {
-          const [y, x] = fromKey(mineKey)
-
-          return newCells[y][x] === CellState.FLAG
-        })
+        keys?.every(mineKey => newCells[mineKey] === CellState.FLAG)
       ) {
         isWinner = true
       }
