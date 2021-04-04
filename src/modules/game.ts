@@ -239,11 +239,17 @@ export const openCell = (
 
 const finishGame = (state: CellStorage, point: Point, minesMap: MinesMap) => {
   const newState = Object.keys(minesMap).reduce(
-    (acc, key) => updateCell(acc, fromKey(key), CellState.MINE),
-    state
+    (acc, key) => {
+      acc[key] = CellState.MINE
+
+      return acc
+    },
+    { ...state }
   )
 
-  return updateCell(newState, point, CellState.EXPLOSION)
+  newState[toKey(...point)] = CellState.EXPLOSION
+
+  return newState
 }
 
 /**
@@ -258,9 +264,7 @@ export const reducer = (state: Game, action: GameAction<any>) => {
         ...state,
         ...action.payload,
         state: GameState.IN_GAME,
-        cells: Array.from({ length: rows }, () =>
-          Array.from({ length: columns })
-        )
+        cells: {}
       }
     case GameActionType.RESTART:
       return initialState
