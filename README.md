@@ -1,1 +1,1 @@
-** React simple starter **
+** virtualized branch contains virtualized variant. **
