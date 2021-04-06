@@ -13,7 +13,8 @@ table {
   border: 1px solid lightgray;
 }
 
-td {
+[data-cell] {
+  border: 1px solid white;
   width: 20px;
   height: 20px;
   line-height: 1;;
