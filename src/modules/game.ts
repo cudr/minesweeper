@@ -70,16 +70,24 @@ const initialState: Game = {
   minesMap: null
 }
 
+export const MAX = 32767
+
 /**
  * HELPERS
  */
 
-export const toKey = (y: string | number, x: string | number) => `${y}-${x}`
+export const toKey = (y: number, x: number) => {
+  if (x > MAX || y > MAX) {
+    throw "Invalid X or Y value."
+  }
+    
+  x += MAX
+  y += MAX
+  return (x << 16) | y
+}
 
-export const fromKey = (key: string): Point => {
-  const [y, x] = key.split('-')
-
-  return [parseInt(y, 10), parseInt(x, 10)]
+export const fromKey = (key: any): Point => {
+  return [(key & 0xFFFF) - MAX, (key >> 16) - MAX]
 }
 
 const getRandomInt = (min: number, max: number) =>
@@ -111,14 +119,6 @@ export const generateMinesMap = (
   }
 
   return minesMap
-}
-
-export const updateCell = (
-  state: CellStorage,
-  point: Point,
-  value: CellState
-) => {
-  return { ...state, [toKey(...point)]: value }
 }
 
 export const markMine = (
@@ -224,13 +224,14 @@ export const openCell = (
         [y, x + 1]
       ]
 
-      matrix.forEach(p => {
+      for (let p of matrix) {
         const k = toKey(...p)
+
         if (!pointMap[k]) {
           points.push(p)
           pointMap[k] = true
         }
-      })
+      }
     }
   }
 
@@ -259,7 +260,6 @@ const finishGame = (state: CellStorage, point: Point, minesMap: MinesMap) => {
 export const reducer = (state: Game, action: GameAction<any>) => {
   switch (action.type) {
     case GameActionType.START:
-      const { rows, columns } = action.payload
       return {
         ...state,
         ...action.payload,

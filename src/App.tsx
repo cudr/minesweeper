@@ -5,6 +5,7 @@ import AutoSizer from "react-virtualized-auto-sizer"
 
 import {
   toKey,
+  MAX,
   useGameReducer,
   Game,
   GameState,
@@ -87,13 +88,13 @@ const App = () => {
     return (
       <form onSubmit={onSubmit}>
         <label htmlFor="rows">Rows:</label>
-        <input required type="number" name="rows" id="rows" />
+        <input max={MAX} required type="number" name="rows" id="rows" />
         <br />
         <label htmlFor="columns">Columns:</label>
-        <input required type="number" name="columns" id="columns" />
+        <input max={MAX} required type="number" name="columns" id="columns" />
         <br />
         <label htmlFor="mines">Mines:</label>
-        <input required type="number" name="mines" id="mines" />
+        <input max={(MAX << 1) - 1} required type="number" name="mines" id="mines" />
         <br />
         <button type="submit">Start Game!</button>
       </form>
